@@ -41,7 +41,7 @@ public class SportPositionTypeTests
     [Fact]
     public void GetPositionType_UnregisteredSport_ReturnsNull()
     {
-        // Use a value not in the default map (e.g. cast an out-of-range int)
+        // Use a value not in the map (e.g. cast an out-of-range int)
         var unknownSport = (Sport)999;
         var type = SportPositionType.GetPositionType(unknownSport);
         Assert.Null(type);

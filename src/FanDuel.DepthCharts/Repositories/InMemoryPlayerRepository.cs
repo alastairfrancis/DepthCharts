@@ -24,7 +24,7 @@ public class InMemoryPlayerRepository(
     {
         if (!_players.TryAdd(player.Number, player))
         {
-            _logger.LogWarning("Create failed: player already exists. PlayerId={PlayerId}, PlayerName={PlayerName}", player.Number, player.Name);
+            _logger.LogError("Create failed: player already exists. PlayerId={PlayerId}, PlayerName={PlayerName}", player.Number, player.Name);
             return false;
         }
 
@@ -40,7 +40,7 @@ public class InMemoryPlayerRepository(
         }
         catch (KeyNotFoundException)
         {
-            _logger.LogWarning("Update failed: player not found. PlayerId={PlayerId}", player.Number);
+            _logger.LogError("Update failed: player not found. PlayerId={PlayerId}", player.Number);
             return false;
         }
 

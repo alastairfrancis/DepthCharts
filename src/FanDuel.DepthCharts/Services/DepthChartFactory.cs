@@ -23,7 +23,7 @@ public sealed class DepthChartFactory(ILoggerFactory loggerFactory) : IDepthChar
     {
         ValidateTeamId(teamId);
         var chart = CreateTypedChart<TPosition>();
-        
+
         if (_charts.TryAdd(teamId, chart))
         {
             _logger.LogInformation("Created depth chart for TeamId={TeamId}", teamId);
@@ -54,7 +54,7 @@ public sealed class DepthChartFactory(ILoggerFactory loggerFactory) : IDepthChar
             _logger.LogInformation("Created depth chart for TeamId={TeamId}", teamId);
             return chart;
         }
-        else 
+        else
         {
             if (_charts.TryGetValue(teamId, out var entry))
             {
@@ -73,8 +73,7 @@ public sealed class DepthChartFactory(ILoggerFactory loggerFactory) : IDepthChar
 
     private static void ValidateTeamId(string? teamId)
     {
-        ArgumentNullException.ThrowIfNull(teamId);
         if (string.IsNullOrWhiteSpace(teamId))
-            throw new ArgumentException("TeamId cannot be empty or whitespace.", nameof(teamId));
+            throw new ArgumentException("TeamId cannot be empty.", nameof(teamId));
     }
 }

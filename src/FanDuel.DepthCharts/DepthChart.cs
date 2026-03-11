@@ -1,10 +1,11 @@
+using FanDuel.DepthCharts.Extensions;
 using Microsoft.Extensions.Logging;
 
 namespace FanDuel.DepthCharts;
 
 /// <summary>
-/// Manages a single team's depth chart with strongly-typed positions.
-/// Stores only player ids. Full player data can be resolved via the repository.
+/// Manages a single team's depth chart.
+/// Stores only player ids. Full player data can be resolved via the player repository. <see cref="IPlayerRepository"/>.
 /// </summary>
 public class DepthChart<TPosition>(ILogger<DepthChart<TPosition>> logger) : IDepthChart<TPosition>
     where TPosition : struct, Enum
@@ -15,7 +16,7 @@ public class DepthChart<TPosition>(ILogger<DepthChart<TPosition>> logger) : IDep
 
     public bool AddPlayerToDepthChart(string position, long playerId, int? positionDepth = null)
     {
-        var pos = ConvertToPosition(position);
+        var pos = position.ToPosition<TPosition>();
         if (pos is null)
         {
             return false;
@@ -35,7 +36,6 @@ public class DepthChart<TPosition>(ILogger<DepthChart<TPosition>> logger) : IDep
             if (!_chart.TryGetValue(position, out var list))
             {
                 list = [];
-                _chart[position] = list;
             }
 
             // Check if player is already in the list for this position.
@@ -54,10 +54,11 @@ public class DepthChart<TPosition>(ILogger<DepthChart<TPosition>> logger) : IDep
             {
                 list.Add(playerId);
             }
+
+            _chart[position] = list;
         }
 
-        _logger.LogInformation(
-            "{Name}: player added. PlayerId={PlayerId}, Position={Position}, DepthIndex={DepthIndex}",
+        _logger.LogInformation("{Name}: player added. PlayerId={PlayerId}, Position={Position}, DepthIndex={DepthIndex}",
             nameof(AddPlayerToDepthChart), playerId, position, index);
 
         return true;
@@ -65,7 +66,7 @@ public class DepthChart<TPosition>(ILogger<DepthChart<TPosition>> logger) : IDep
 
     public IReadOnlyList<long> RemovePlayerFromDepthChart(string position, long playerId)
     {
-        var pos = ConvertToPosition(position);
+        var pos = position.ToPosition<TPosition>();
         if (pos is null)
         {
             return [];
@@ -93,6 +94,7 @@ public class DepthChart<TPosition>(ILogger<DepthChart<TPosition>> logger) : IDep
                 return [];
             }
 
+            // backup players will be promoted one position
             list.RemoveAt(idx);
             return [playerId];
         }
@@ -100,7 +102,7 @@ public class DepthChart<TPosition>(ILogger<DepthChart<TPosition>> logger) : IDep
 
     public IReadOnlyList<long> GetBackups(string position, long playerId)
     {
-        var pos = ConvertToPosition(position);
+        var pos = position.ToPosition<TPosition>();
         if (pos is null)
         {
             return [];
@@ -140,26 +142,5 @@ public class DepthChart<TPosition>(ILogger<DepthChart<TPosition>> logger) : IDep
             }
             return result;
         }
-    }
-
-    /// <summary>
-    /// Convert string to TPosition type
-    /// </summary>
-    /// <returns>null if position is not valid TPosition type</returns>
-    private static TPosition? ConvertToPosition(string position)
-    {
-        if (!string.IsNullOrWhiteSpace(position))
-        {
-            try
-            {
-                return Enum.Parse<TPosition>(position, ignoreCase: true);
-            }
-            catch (ArgumentException)
-            { }
-            catch (InvalidOperationException)
-            { }
-        }
-
-        return null;
     }
 }

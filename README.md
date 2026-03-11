@@ -1,7 +1,28 @@
-# FanDuel Trading Solutions – Depth Charts challenge
+# FanDuel Trading Solutions – Depth Charts
 
-A .NET 9 C# solution that implements depth chart management for sports. 
-It supports adding/removing players by position, querying backups, and retrieving the full depth chart.
+A .NET C# solution for managing depth charts: add/remove players by position, query backups, and retrieve the full chart. Supports multiple teams via `IDepthChartFactory` (keyed by `teamId`).
+
+---
+
+## Table of contents
+
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Design notes](#design-notes)
+- [Quick start](#quick-start)
+- [Solution layout](#solution-layout)
+- [Build and test](#build-and-test)
+- [API](#api)
+- [Using the library](#using-the-fandueldepthcharts-library)
+
+---
+
+## Features
+
+- **Depth chart operations**: Add player at position (with optional depth), remove player, get backups for a player, get full chart.
+- **Typed positions**: Use sport-specific enums (e.g. `NflPosition`, `MlbPosition`) or string positions where the type is not known at compile time.
+- **Per-team charts**: `IDepthChartFactory` creates or returns a chart per `teamId`; charts are independent.
+- **API and console**: ASP.NET Core Web API with Swagger, plus a console sample that runs the challenge scenario.
 
 ---
 
@@ -11,98 +32,103 @@ It supports adding/removing players by position, querying backups, and retrievin
 
 ---
 
-## Assumptions and notes
+## Design notes
 
 1. **Player identity**  
-  Players are identified by numeric id within the chart. The same player id can appear at multiple positions. The player details are assumed to be stored elsewhere.  I feel it's unwise to duplicate information like player names as it could quickly become inconsistent with other parts of the system.
+   Players are identified by numeric id in the chart. The same player id can appear at multiple positions. Player details (e.g. names) are assumed to live in another store (e.g. `IPlayerRepository`) to avoid duplicating and inconsistent data.
 
 2. **Multiple charts**  
-  The system supports multiple charts (e.g. different teams, sports) via the `IDepthChartFactory`. Each chart for a team is independent.
+   Charts are per team, keyed by `teamId` via `IDepthChartFactory`.
 
-3. **In-memory storage**
-  The depth charts are stored in-memory for simplicity. In a real system, we would likely want to persist this data in a database or distributed cache (e.g. Redis).
+3. **In-memory storage**  
+   Depth charts are stored in-memory. In production you would typically persist to a database or distributed cache (e.g. Redis).
 
-4. **Minimal change functionality**  
-  In a distributed system, we would need to support more complex operations like player or team deletion, or players moving teams.
+4. **Scope**  
+   The implementation focuses on depth chart operations. A full system would also handle team/player event updates (e.g. player or team deletion, players moving teams).
 
-5. **Additional validation**
-  The current implementation assumes valid player ids are provided. We would need to check that player is a member of the team, but that responsibility likely belongs to another service that manages team, and player information.
+5. **Validation**  
+   The library assumes valid player ids and that the caller (or another service) ensures players belong to the team. Team and player membership would be maintained by other systems.
+
+6. **Sample API**  
+   A sample API is provided. If the library were containerized, it could expose depth chart services to other systems. The API requires `sport` and `teamId` in the URL because I don't have enough team data to infer the sport.
+
+---
+
+## Quick start
+
+```bash
+# Clone and open the repo, then from the solution root:
+dotnet restore
+dotnet build
+dotnet test
+
+# Run the API (then open Swagger at https://localhost:<port>/swagger)
+dotnet run --project src/FanDuel.DepthCharts.Api/FanDuel.DepthCharts.Api.csproj
+
+# Or run the console sample
+dotnet run --project src/FanDuel.DepthCharts.Console/FanDuel.DepthCharts.Console.csproj
+```
+
 ---
 
 ## Solution layout
 
 | Project | Purpose |
 |--------|---------|
-| `src/FanDuel.DepthCharts` | Core library: `IDepthChart`, `ISportDepthChartFactory`, `Sport`, add/remove/backups/full chart. **Packaged as NuGet for use in other projects.** |
-| `src/FanDuel.DepthCharts.Console` | Console app that runs the challenge sample (add, backups, full chart, remove). |
-| `src/FanDuel.DepthCharts.Api` | ASP.NET Core Web API with Swagger; create chart, add player, get full chart, get backups. |
-| `tests/FanDuel.DepthCharts.Tests` | xUnit tests for depth chart behavior and edge cases. |
+| `src/FanDuel.DepthCharts` | Core library: `IDepthChart<TPosition>`, `IDepthChartFactory`, position enums, add/remove/backups/full chart. Can be packed as a NuGet package. |
+| `src/FanDuel.DepthCharts.Console` | Console app: runs the challenge sample (add players, full chart, backups, remove). |
+| `src/FanDuel.DepthCharts.Api` | ASP.NET Core Web API with Swagger: create chart, add player, get full chart, get backups. |
+| `tests/FanDuel.DepthCharts.Tests` | xUnit tests: depth chart behavior, factory, repository, edge cases. |
 
 ---
 
-## Build (entire solution)
+## Build and test
 
 From the solution root:
 
 ```bash
 dotnet restore
 dotnet build
-```
----
-
-## Run unit tests
-
-From the solution root:
-
-```bash
 dotnet test
 ```
 
-The test project covers backup lists, full depth chart order, add/remove behavior, multiple positions, and edge cases (null position, player not on chart, etc.).
+Tests cover backup lists, full depth chart order, add/remove behavior, duplicate players, multiple positions, and edge cases (player not on chart, unknown position, etc.).
 
 ---
 
-## Start the API server
+## API
 
-From the solution root:
+Base route: `api/sports/{sport}/teams/{teamId}`. Supported `sport` values depend on `SportPositionType` (e.g. NFL, MLB, NHL, NBA).
+
+**Swagger UI:** when the API is running, open `https://localhost:<port>/swagger` in your browser.
+
+---
+
+## Run the console sample
+
+The console app demonstrates the library with the challenge sample data:
 
 ```bash
-dotnet run --project src/FanDuel.DepthCharts.Api/FanDuel.DepthCharts.Api.csproj
+dotnet run --project src/FanDuel.DepthCharts.Console/FanDuel.DepthCharts.Console.csproj
 ```
 
-
-The API listens on the URLs shown in the console (for non-default ports modify `launchSettings.json`).
-
 ---
 
-## Swagger URL
+## Using the FanDuel.DepthCharts library
 
-When the API is running, open Swagger UI in your browser:
+The core library can be packed as NuGet and consumed from other solutions.
 
-- **Swagger UI:** `https://localhost:<port>/swagger`  
+### Pack the library
 
----
-
-## Including the FanDuel.DepthCharts library in other projects
-
-The **FanDuel.DepthCharts** library is intended to be **built using NuGet** 
-and **included in other solutions as a NuGet package**.
-
-### Building the library as a NuGet package
-
-From the solution root, pack the library project:
+From the solution root:
 
 ```bash
 dotnet pack src/FanDuel.DepthCharts/FanDuel.DepthCharts.csproj -c Release -o ./nupkgs
 ```
 
-This produces a `.nupkg` file.
+### Reference the package
 
-### Adding the library to another project via NuGet
-
-In the project where you want to use depth charts, **add the package reference**:
-
-**PackageReference (e.g. in a `.csproj`):**
+**PackageReference (in `.csproj`):**
 
 ```xml
 <ItemGroup>
@@ -110,35 +136,33 @@ In the project where you want to use depth charts, **add the package reference**
 </ItemGroup>
 ```
 
-**Or via .NET CLI:**
-
-Then register the library services and use the factory in your app:
-
-```csharp
-using FanDuel.DepthCharts;
-using FanDuel.DepthCharts.Models;
-using FanDuel.DepthCharts.Services;
-
-// In Startup / Program.cs (or wherever you configure services)
-services.AddDepthChartServices();
-
-// Resolve ISportDepthChartFactory and use it
-var factory = app.Services.GetRequiredService<ISportDepthChartFactory>();
-IDepthChart chart = factory.GetOrCreateChart(Sport.NFL, "TB");
-chart.AddPlayerToDepthChart("QB", 12, 0);
-var backups = chart.GetBackups("QB", 12);
-var fullChart = chart.GetFullDepthChart();
-```
-
----
-
-## Run the console sample
-
-A console app is included that demonstrates the library usage with the sample data from the challenge description. 
-To run it:
+**Or via .NET CLI** (from the consuming project directory):
 
 ```bash
-dotnet run --project src/FanDuel.DepthCharts.Console/FanDuel.DepthCharts.Console.csproj
+dotnet add package FanDuel.DepthCharts --version 1.0.0
 ```
 
+### Register services and use the factory
+
+Charts are keyed by `teamId` only. Use the generic methods with a position enum type (e.g. `NflPosition`) or call `GetOrCreateChart<TPosition>(teamId)` via reflection when the position type is known only at runtime.
+
+```csharp
+using FanDuel.DepthCharts.Extensions;
+using FanDuel.DepthCharts.Models;
+using FanDuel.DepthCharts.Models.Positions;
+using FanDuel.DepthCharts.Services;
+
+// Register library services (e.g. in Program.cs or Startup)
+services.AddDepthChartServices();
+
+// Resolve the factory and get or create a chart by teamId
+var factory = app.Services.GetRequiredService<IDepthChartFactory>();
+var chart = factory.GetOrCreateChart<NflPosition>("TB");
+if (chart != null)
+{
+    chart.AddPlayerToDepthChart(NflPosition.QB, 12, 0);
+    var backups = chart.GetBackups(NflPosition.QB, 12);
+    var fullChart = chart.GetFullDepthChart();
+}
+```
 ---

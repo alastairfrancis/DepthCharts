@@ -23,86 +23,96 @@ public class DepthChartTests
         _chart.AddPlayerToDepthChart(NflPosition.LWR, _mikeEvans.Number, 0);
         _chart.AddPlayerToDepthChart(NflPosition.LWR, _jaelonDarden.Number, 1);
         _chart.AddPlayerToDepthChart(NflPosition.LWR, _scottMiller.Number, 2);
+        _chart.AddPlayerToDepthChart(NflPosition.LWR, _kyleTrask.Number, 2);
     }
 
+    /// <summary>getBackups: For a given player and position, returns all players that are Backups (lower position_depth).</summary>
     [Fact]
-    public void GetBackups_QB_TomBrady_Returns_Gabbert_And_Trask()
+    public void GetBackups_Pos0_Returns_Lower_Order_Players()
     {
         var backups = _chart.GetBackups(NflPosition.QB, _tomBrady.Number);
 
         Assert.Equal(2, backups.Count);
-        Assert.Equal(11, backups[0]);
-        Assert.Equal(2, backups[1]);
+        Assert.Equal(_blaineGabbert.Number, backups[0]);
+        Assert.Equal(_kyleTrask.Number, backups[1]);
     }
 
     [Fact]
-    public void GetBackups_LWR_JaelonDarden_Returns_ScottMiller()
+    public void GetBackups_Pos1_Returns_Lower_Order_Players()
     {
         var backups = _chart.GetBackups(NflPosition.LWR, _jaelonDarden.Number);
 
-        Assert.Single(backups);
-        Assert.Equal(10, backups[0]);
+        Assert.Equal(2, backups.Count);
+        Assert.Equal(_kyleTrask.Number, backups[0]);
+        Assert.Equal(_scottMiller.Number, backups[1]);
     }
 
     [Fact]
-    public void GetBackups_QB_MikeEvans_Returns_Empty()
+    public void GetBackups_Player_Not_In_Position_Returns_Empty()
     {
         var backups = _chart.GetBackups(NflPosition.QB, _mikeEvans.Number);
-
         Assert.Empty(backups);
     }
 
     [Fact]
-    public void GetBackups_QB_BlaineGabbert_Returns_KyleTrask()
+    public void GetBackups_Returns_NonEmpty()
     {
         var backups = _chart.GetBackups(NflPosition.QB, _blaineGabbert.Number);
 
         Assert.Single(backups);
-        Assert.Equal(2, backups[0]);
+        Assert.Equal(_kyleTrask.Number, backups[0]);
     }
 
     [Fact]
-    public void GetBackups_QB_KyleTrask_Returns_Empty()
+    public void GetBackups_Position_Last_Player_Returns_Empty()
     {
         var backups = _chart.GetBackups(NflPosition.QB, _kyleTrask.Number);
         Assert.Empty(backups);
     }
 
+    /// <summary>getFullDepthChart: Full depth chart with every position on the team and every player within the depth chart.</summary>
     [Fact]
-    public void GetFullDepthChart_Contains_QB_And_LWR_InOrder()
+    public void GetFullDepthChart_Contains_Positions_InOrder()
     {
         var full = _chart.GetFullDepthChart();
+
+        // check positions
         Assert.True(full.ContainsKey(NflPosition.QB));
         Assert.True(full.ContainsKey(NflPosition.LWR));
+        Assert.False(full.ContainsKey(NflPosition.RWR));
+
+        // check depth counts
         Assert.Equal(3, full[NflPosition.QB].Count);
-        Assert.Equal(3, full[NflPosition.LWR].Count);
+        Assert.Equal(4, full[NflPosition.LWR].Count);
 
         // check QB order
-        Assert.Equal(12, full[NflPosition.QB][0]);
-        Assert.Equal(11, full[NflPosition.QB][1]);
-        Assert.Equal(2, full[NflPosition.QB][2]);
+        Assert.Equal(_tomBrady.Number, full[NflPosition.QB][0]);
+        Assert.Equal(_blaineGabbert.Number, full[NflPosition.QB][1]);
+        Assert.Equal(_kyleTrask.Number, full[NflPosition.QB][2]);
 
         // check LWR order
-        Assert.Equal(13, full[NflPosition.LWR][0]);
-        Assert.Equal(1, full[NflPosition.LWR][1]);
-        Assert.Equal(10, full[NflPosition.LWR][2]);
+        Assert.Equal(_mikeEvans.Number, full[NflPosition.LWR][0]);
+        Assert.Equal(_jaelonDarden.Number, full[NflPosition.LWR][1]);
+        Assert.Equal(_kyleTrask.Number, full[NflPosition.LWR][2]);
+        Assert.Equal(_scottMiller.Number, full[NflPosition.LWR][3]);
     }
 
     [Fact]
-    public void RemovePlayerFromDepthChart_LWR_MikeEvans_Returns_Player_And_Removes_From_Chart()
+    public void RemovePlayerFromDepthChart_Returns_Player_And_Removes_From_Chart()
     {
         var removed = _chart.RemovePlayerFromDepthChart(NflPosition.LWR, _mikeEvans.Number);
         Assert.Single(removed);
-        Assert.Equal(13, _mikeEvans.Number);
+        Assert.Equal(_mikeEvans.Number, removed[0]);
 
         var lwr = _chart.GetFullDepthChart()[NflPosition.LWR];
-        Assert.Equal(2, lwr.Count);
-        Assert.Equal(1, lwr[0]);
-        Assert.Equal(10, lwr[1]);
+        Assert.Equal(3, lwr.Count);
+        Assert.Equal(_jaelonDarden.Number, lwr[0]);
+        Assert.Equal(_kyleTrask.Number, lwr[1]);
+        Assert.Equal(_scottMiller.Number, lwr[2]);
     }
 
     [Fact]
-    public void RemovePlayerFromDepthChart_WR_NotOnChart_Returns_Empty()
+    public void RemovePlayerFromDepthChart_Position_NotOnChart_Returns_Empty()
     {
         var chart = new DepthChart<NflPosition>(NullLogger<DepthChart<NflPosition>>.Instance);
         chart.AddPlayerToDepthChart(NflPosition.LWR, _mikeEvans.Number, 0);
@@ -110,6 +120,39 @@ public class DepthChartTests
         var removed = chart.RemovePlayerFromDepthChart(NflPosition.WR, _mikeEvans.Number);
         Assert.Empty(removed);
         Assert.Single(chart.GetFullDepthChart()[NflPosition.LWR]);
+    }
+
+    [Fact]
+    public void RemovePlayerFromDepthChart_PlayerNotAtPosition_ReturnsEmpty()
+    {
+        var chart = new DepthChart<NflPosition>(NullLogger<DepthChart<NflPosition>>.Instance);
+        chart.AddPlayerToDepthChart(NflPosition.QB, _tomBrady.Number, 0);
+        chart.AddPlayerToDepthChart(NflPosition.LWR, _mikeEvans.Number, 0);
+
+        var removed = chart.RemovePlayerFromDepthChart(NflPosition.LWR, _tomBrady.Number);
+        Assert.Empty(removed);
+        Assert.Single(chart.GetFullDepthChart()[NflPosition.QB]);
+        Assert.Single(chart.GetFullDepthChart()[NflPosition.LWR]);
+    }
+
+    [Fact]
+    public void RemovePlayerFromDepthChart_UnknownPosition_ReturnsEmpty()
+    {
+        var removed = _chart.RemovePlayerFromDepthChart(NflPosition.K, _tomBrady.Number);
+        Assert.Empty(removed);
+    }
+
+    [Fact]
+    public void AddPlayerToDepthChart_AddsPlayerAtGivenPosition()
+    {
+        var chart = new DepthChart<NflPosition>(NullLogger<DepthChart<NflPosition>>.Instance);
+        chart.AddPlayerToDepthChart(NflPosition.QB, _tomBrady.Number, 0);
+
+        var full = chart.GetFullDepthChart();
+
+        Assert.True(full.ContainsKey(NflPosition.QB));
+        Assert.Single(full[NflPosition.QB]);
+        Assert.Equal(_tomBrady.Number, full[NflPosition.QB][0]);
     }
 
     [Fact]
@@ -121,12 +164,12 @@ public class DepthChartTests
 
         var full = chart.GetFullDepthChart();
         Assert.Equal(2, full[NflPosition.QB].Count);
-        Assert.Equal(12, full[NflPosition.QB][0]);
-        Assert.Equal(11, full[NflPosition.QB][1]);
+        Assert.Equal(_tomBrady.Number, full[NflPosition.QB][0]);
+        Assert.Equal(_blaineGabbert.Number, full[NflPosition.QB][1]);
     }
 
     [Fact]
-    public void AddPlayerToDepthChart_WithPositionDepth_InsertsAndShifts()
+    public void AddPlayerToDepthChart_WithPositionDepth_InsertsAndShiftsDown()
     {
         var chart = new DepthChart<NflPosition>(NullLogger<DepthChart<NflPosition>>.Instance);
         chart.AddPlayerToDepthChart(NflPosition.QB, _tomBrady.Number, 0);
@@ -135,9 +178,9 @@ public class DepthChartTests
 
         var full = chart.GetFullDepthChart();
         Assert.Equal(3, full[NflPosition.QB].Count);
-        Assert.Equal(12, full[NflPosition.QB][0]); // Brady
-        Assert.Equal(11, full[NflPosition.QB][1]); // Gabbert
-        Assert.Equal(2, full[NflPosition.QB][2]);  // Trask
+        Assert.Equal(_tomBrady.Number, full[NflPosition.QB][0]);
+        Assert.Equal(_blaineGabbert.Number, full[NflPosition.QB][1]);
+        Assert.Equal(_kyleTrask.Number, full[NflPosition.QB][2]);
     }
 
     [Fact]
@@ -156,11 +199,28 @@ public class DepthChartTests
     }
 
     [Fact]
+    public void AddPlayerToDepthChart_DuplicatePlayerIdInPositionList_NotAdded_ReturnsFalse()
+    {
+        var chart = new DepthChart<NflPosition>(NullLogger<DepthChart<NflPosition>>.Instance);
+        chart.AddPlayerToDepthChart(NflPosition.QB, _tomBrady.Number, 0);
+        chart.AddPlayerToDepthChart(NflPosition.QB, _blaineGabbert.Number, 1);
+
+        var duplicateAtDifferentDepth = chart.AddPlayerToDepthChart(NflPosition.QB, _tomBrady.Number, 1);
+        Assert.False(duplicateAtDifferentDepth);
+
+        var full = chart.GetFullDepthChart();
+        Assert.Equal(2, full[NflPosition.QB].Count);
+        Assert.Equal(_tomBrady.Number, full[NflPosition.QB][0]);
+        Assert.Equal(_blaineGabbert.Number, full[NflPosition.QB][1]);
+        Assert.Equal(1, full[NflPosition.QB].Count(id => id == _tomBrady.Number));
+    }
+
+    [Fact]
     public void SamePlayer_MultiplePositions_PlayerCanBeOnBoth()
     {
         var chart = new DepthChart<NflPosition>(NullLogger<DepthChart<NflPosition>>.Instance);
         var joshWells = new Player(72, "Josh Wells");
-        
+
         chart.AddPlayerToDepthChart(NflPosition.LT, joshWells.Number, 1);
         chart.AddPlayerToDepthChart(NflPosition.RT, joshWells.Number, 1);
 
@@ -177,12 +237,5 @@ public class DepthChartTests
 
         var backups = chart.GetBackups(NflPosition.K, _tomBrady.Number);
         Assert.Empty(backups);
-    }
-
-    [Fact]
-    public void RemovePlayerFromDepthChart_UnknownPosition_ReturnsEmpty()
-    {
-        var removed = _chart.RemovePlayerFromDepthChart(NflPosition.K, _tomBrady.Number);
-        Assert.Empty(removed);
     }
 }

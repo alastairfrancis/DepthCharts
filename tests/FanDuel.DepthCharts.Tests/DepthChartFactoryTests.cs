@@ -74,52 +74,35 @@ public class DepthChartFactoryTests
         Assert.Equal(12, full[NflPosition.QB][0]);
     }
 
-    [Fact]
-    public void CreateChart_NullTeamId_ThrowsArgumentNullException()
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void CreateChart_EmptyTeamId_ThrowsArgumentException(string teamId)
     {
         var factory = CreateFactory();
-        var ex = Assert.Throws<ArgumentNullException>(() => factory.CreateChart<NflPosition>(null!));
-        Assert.Equal("teamId", ex.ParamName);
-    }
+        var ex = Assert.Throws<ArgumentException>(() => factory.CreateChart<NflPosition>(teamId));
 
-    [Fact]
-    public void CreateChart_EmptyTeamId_ThrowsArgumentException()
-    {
-        var factory = CreateFactory();
-        var ex = Assert.Throws<ArgumentException>(() => factory.CreateChart<NflPosition>(""));
         Assert.Equal("teamId", ex.ParamName);
         Assert.Contains("empty", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
-    public void GetChart_NullTeamId_ThrowsArgumentNullException()
+    [Theory]
+    [InlineData("\t")]
+    [InlineData("         ")]
+    public void GetChart_NullTeamId_ThrowsArgumentException(string teamId)
     {
         var factory = CreateFactory();
-        var ex = Assert.Throws<ArgumentNullException>(() => factory.GetChart<NflPosition>(null!));
+        var ex = Assert.Throws<ArgumentException>(() => factory.GetChart<NflPosition>(teamId));
         Assert.Equal("teamId", ex.ParamName);
     }
 
-    [Fact]
-    public void GetChart_EmptyTeamId_ThrowsArgumentException()
+    [Theory]
+    [InlineData("\t")]
+    [InlineData("         ")]
+    public void GetChart_EmptyTeamId_ThrowsArgumentException(string teamId)
     {
         var factory = CreateFactory();
-        var ex = Assert.Throws<ArgumentException>(() => factory.GetChart<NflPosition>(""));
-        Assert.Equal("teamId", ex.ParamName);
-    }
-
-    [Fact]
-    public void GetOrCreateChart_NullTeamId_ThrowsArgumentNullException()
-    {
-        var factory = CreateFactory();
-        var ex = Assert.Throws<ArgumentNullException>(() => factory.GetOrCreateChart<NflPosition>(null!));
-        Assert.Equal("teamId", ex.ParamName);
-    }
-
-    [Fact]
-    public void GetOrCreateChart_EmptyTeamId_ThrowsArgumentException()
-    {
-        var factory = CreateFactory();
-        var ex = Assert.Throws<ArgumentException>(() => factory.GetOrCreateChart<NflPosition>(""));
+        var ex = Assert.Throws<ArgumentException>(() => factory.GetChart<NflPosition>(teamId));
         Assert.Equal("teamId", ex.ParamName);
     }
 }

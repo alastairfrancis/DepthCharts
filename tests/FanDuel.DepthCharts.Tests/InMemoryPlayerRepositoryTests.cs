@@ -6,6 +6,14 @@ namespace FanDuel.DepthCharts.Tests;
 
 public class InMemoryPlayerRepositoryTests
 {
+    private const int TomBradyId = 12;
+    private const int ScottMillerId = 10;
+    private const int MikeEvansId = 7;
+    private const int BlaineGabbertId = 11;
+    private const int KyleTraskId = 2;
+    private const int JaelonDardenId = 1;
+    private const int NonexistentPlayerId = 99;
+
     private static InMemoryPlayerRepository CreateRepository()
         => new(NullLogger<InMemoryPlayerRepository>.Instance);
 
@@ -13,29 +21,29 @@ public class InMemoryPlayerRepositoryTests
     public void GetById_WhenRepositoryEmpty_ReturnsNull()
     {
         var repo = CreateRepository();
-        Assert.Null(repo.GetById(12));
+        Assert.Null(repo.GetById(TomBradyId));
     }
 
     [Fact]
     public void GetById_WhenPlayerDoesNotExist_ReturnsNull()
     {
         var repo = CreateRepository();
-        repo.Create(new Player(10, "Scott Miller"));
+        repo.Create(new Player(ScottMillerId, "Scott Miller"));
 
-        Assert.Null(repo.GetById(99));
+        Assert.Null(repo.GetById(NonexistentPlayerId));
     }
 
     [Fact]
     public void GetById_WhenPlayerExists_ReturnsPlayer()
     {
         var repo = CreateRepository();
-        var player = new Player(12, "Tom Brady");
+        var player = new Player(TomBradyId, "Tom Brady");
 
         repo.Create(player);
-        var found = repo.GetById(12);
+        var found = repo.GetById(TomBradyId);
 
         Assert.NotNull(found);
-        Assert.Equal(12, found.Number);
+        Assert.Equal(TomBradyId, found.Number);
         Assert.Equal("Tom Brady", found.Name);
     }
 
@@ -43,13 +51,13 @@ public class InMemoryPlayerRepositoryTests
     public void Create_WhenPlayerDoesNotExist_StoresPlayer()
     {
         var repo = CreateRepository();
-        var player = new Player(7, "Mike Evans");
+        var player = new Player(MikeEvansId, "Mike Evans");
 
         repo.Create(player);
-        var found = repo.GetById(7);
+        var found = repo.GetById(MikeEvansId);
 
         Assert.NotNull(found);
-        Assert.Equal(7, found.Number);
+        Assert.Equal(MikeEvansId, found.Number);
         Assert.Equal("Mike Evans", found.Name);
     }
 
@@ -57,13 +65,13 @@ public class InMemoryPlayerRepositoryTests
     public void Create_WhenPlayerAlreadyExists_ReturnsFalse()
     {
         var repo = CreateRepository();
-        repo.Create(new Player(11, "Blaine Gabbert"));
+        repo.Create(new Player(BlaineGabbertId, "Blaine Gabbert"));
 
-        var duplicate = new Player(11, "Other Player");
+        var duplicate = new Player(BlaineGabbertId, "Other Player");
         var result = repo.Create(duplicate);
         Assert.False(result);
 
-        var found = repo.GetById(11);
+        var found = repo.GetById(BlaineGabbertId);
         Assert.NotNull(found);
         Assert.Equal("Blaine Gabbert", found.Name);
     }
@@ -72,12 +80,12 @@ public class InMemoryPlayerRepositoryTests
     public void Update_WhenPlayerExists_UpdatesPlayer()
     {
         var repo = CreateRepository();
-        repo.Create(new Player(2, "Kyle Trask"));
+        repo.Create(new Player(KyleTraskId, "Kyle Trask"));
 
-        var updated = new Player(2, "Kyle Trask Jr.");
+        var updated = new Player(KyleTraskId, "Kyle Trask Jr.");
         repo.Update(updated);
-        
-        var found = repo.GetById(2);
+
+        var found = repo.GetById(KyleTraskId);
         Assert.NotNull(found);
         Assert.Equal("Kyle Trask Jr.", found.Name);
     }
@@ -86,7 +94,7 @@ public class InMemoryPlayerRepositoryTests
     public void Update_WhenPlayerDoesNotExist_ReturnsFalse()
     {
         var repo = CreateRepository();
-        var player = new Player(99, "Unknown");
+        var player = new Player(NonexistentPlayerId, "Unknown");
         var result = repo.Update(player);
 
         Assert.False(result);
@@ -98,9 +106,9 @@ public class InMemoryPlayerRepositoryTests
         var repo = CreateRepository();
         var players = new[]
         {
-            new Player(1, "Jaelon Darden"),
-            new Player(2, "Kyle Trask"),
-            new Player(12, "Tom Brady"),
+            new Player(JaelonDardenId, "Jaelon Darden"),
+            new Player(KyleTraskId, "Kyle Trask"),
+            new Player(TomBradyId, "Tom Brady"),
         };
 
         foreach (var p in players)
